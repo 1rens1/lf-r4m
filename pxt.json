@@ -9,7 +9,6 @@
         "sensors": "github:gigotoys/gigo-block#b900a6ceabfc9757eb5b5c308f2d2a440dc58785"
     },
     "files": [
-        "main.blocks",
         "main.ts",
         "README.md"
     ],
@@ -23,5 +22,5 @@
     "supportedTargets": [
         "microbit"
     ],
-    "preferredEditor": "blocksprj"
+    "preferredEditor": "tsprj"
 }
