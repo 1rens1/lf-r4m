@@ -1,9 +1,8 @@
-/**
+/*
  * Line follower for R4M National - Indonesia
  * Used PID Algorithm, reference: https://robotresearchlab.com/2019/02/16/pid-line-follower-tuning/
- * by Rein
+ * by rens
  */
-
 
 function showIcon(icon: IconNames, duration = 0) {
     basic.showIcon(icon, 0);
@@ -41,6 +40,7 @@ function main() {
     Motor.set(Motor.LEFT, 0, Motor.MAX_SPEED);
     Motor.set(Motor.RIGHT, 1, Motor.MAX_SPEED);
     basic.pause(1000);
+
     // wait for other robots
     Motor.set(Motor.LEFT, 0, 0);
     Motor.set(Motor.RIGHT, 1, 0);
@@ -49,17 +49,15 @@ function main() {
     else
         showIcon(IconNames.Surprised);
 
-    //@ts-ignore
-    // const [Kp, Ki, Kd] = [Motor.MAX_SPEED * 1, 0.035, 0.06] as const;
-    const [Kp, Ki, Kd] = [Motor.MAX_SPEED * 0.9, 0.02, 0.02] as const;
+    const [Kp, Ki, Kd] = [Motor.MAX_SPEED * 0.9, 0.02, 0.02];
     let [sumError, lastError] = [0, 0];
 
     while (pins.digitalReadPin(DigitalPin.P20) != 0) {
         const leftOnLine = Sensor.isOnLine(Sensor.LEFT);
         const rightOnLine = Sensor.isOnLine(Sensor.RIGHT);
 
-        if (leftOnLine) led.plot(0, 0); else led.unplot(0, 0)
-        if (rightOnLine) led.plot(4, 0); else led.unplot(4, 0)
+        if (leftOnLine) led.plot(0, 0); else led.unplot(0, 0);
+        if (rightOnLine) led.plot(4, 0); else led.unplot(4, 0);
 
         /* PID ALGORITHM */
         let error = 0;
@@ -90,9 +88,8 @@ function main() {
 }
 // 0-255
 const Motor = {
-    //@ts-ignore
     // 0-255
-    MAX_SPEED: 75 as const,
+    MAX_SPEED: 75,
     // [Control Pin, Speed Pin]
     LEFT: [AnalogPin.P13, AnalogPin.P14],
     RIGHT: [AnalogPin.P15, AnalogPin.P16],
@@ -108,13 +105,21 @@ const Sensor = {
     isOnLine: (sensor: DigitalPin) => pins.digitalReadPin(sensor) == 1
 }
 
+const ForceSensor = {
+    MAIN: DigitalPin.P20,
+
+    isPressed: (forceSensor: DigitalPin | null) => pins.digitalReadPin(forceSensor) == 0
+}
+
+const getButtonIsPressed = pins.digitalReadPin(DigitalPin.P20) != 0
+
 while (true) {
     // Reset motors
     Motor.set(Motor.LEFT, 0, 0);
     Motor.set(Motor.RIGHT, 1, 0);
     showIcon(IconNames.Asleep, 1000);
-    while (pins.digitalReadPin(DigitalPin.P20) != 0) {
-        // do nothing
-    }
+
+    while (pins.digitalReadPin(DigitalPin.P20) != 0) { } // wait for button press
+
     main();
 }
