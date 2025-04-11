@@ -16,7 +16,7 @@ function pauseAnimation(duration: number) {
     let lastProgress = 0;
 
     while (input.runningTime() < startTime + duration) {
-        if (pins.digitalReadPin(DigitalPin.P20) == 0)
+        if (ForceSensor.isPressed())
             return 1;
 
         const elapsed = Math.max(0, input.runningTime() - startTime);
@@ -52,7 +52,7 @@ function main() {
     const [Kp, Ki, Kd] = [Motor.MAX_SPEED * 0.9, 0.02, 0.02];
     let [sumError, lastError] = [0, 0];
 
-    while (pins.digitalReadPin(DigitalPin.P20) != 0) {
+    while (!ForceSensor.isPressed()) {
         const leftOnLine = Sensor.isOnLine(Sensor.LEFT);
         const rightOnLine = Sensor.isOnLine(Sensor.RIGHT);
 
@@ -108,10 +108,9 @@ const Sensor = {
 const ForceSensor = {
     MAIN: DigitalPin.P20,
 
-    isPressed: (forceSensor: DigitalPin | null) => pins.digitalReadPin(forceSensor) == 0
+    isPressed: (forceSensor: DigitalPin = null) =>
+        pins.digitalReadPin(forceSensor == null ? ForceSensor.MAIN : forceSensor) == 0
 }
-
-const getButtonIsPressed = pins.digitalReadPin(DigitalPin.P20) != 0
 
 while (true) {
     // Reset motors
@@ -119,7 +118,7 @@ while (true) {
     Motor.set(Motor.RIGHT, 1, 0);
     showIcon(IconNames.Asleep, 1000);
 
-    while (pins.digitalReadPin(DigitalPin.P20) != 0) { } // wait for button press
+    while (!ForceSensor.isPressed()) { } // wait for button press
 
     main();
 }
