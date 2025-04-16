@@ -4,92 +4,12 @@
  * by rens
  */
 
-function showIcon(icon: IconNames, duration = 0) {
-    basic.showIcon(icon, 0);
-    basic.pause(duration);
-}
-
-function pauseAnimation(duration: number) {
-    const startTime = input.runningTime();
-    basic.clearScreen();
-
-    let lastProgress = 0;
-
-    while (input.runningTime() < startTime + duration) {
-        if (ForceSensor.isPressed())
-            return 1;
-
-        const elapsed = Math.max(0, input.runningTime() - startTime);
-        const progress = Math.round(elapsed / duration * 25);
-
-        if (progress > lastProgress) {
-            for (let i = lastProgress; i < progress; i++) {
-                const x = i % 5;
-                const y = Math.floor(i / 5);
-                led.plot(x, y);
-            }
-            lastProgress = progress;
-        }
-    }
-    return 0;
-}
-
-function main() {
-    // go forwards for a duration
-    basic.showArrow(ArrowNames.North);
-    Motor.set(Motor.LEFT, 0, Motor.MAX_SPEED);
-    Motor.set(Motor.RIGHT, 1, Motor.MAX_SPEED);
-    basic.pause(1000);
-
-    // wait for other robots
-    Motor.set(Motor.LEFT, 0, 0);
-    Motor.set(Motor.RIGHT, 1, 0);
-    if (pauseAnimation(15 * 1000) == 1)
-        showIcon(IconNames.Surprised, 500);
-    else
-        showIcon(IconNames.Surprised);
-
-    const [Kp, Ki, Kd] = [Motor.MAX_SPEED * 0.9, 0.02, 0.02];
-    let [sumError, lastError] = [0, 0];
-
-    while (!ForceSensor.isPressed()) {
-        const leftOnLine = Sensor.isOnLine(Sensor.LEFT);
-        const rightOnLine = Sensor.isOnLine(Sensor.RIGHT);
-
-        if (leftOnLine) led.plot(0, 0); else led.unplot(0, 0);
-        if (rightOnLine) led.plot(4, 0); else led.unplot(4, 0);
-
-        /* PID ALGORITHM */
-        let error = 0;
-        if (leftOnLine && !rightOnLine) { // drifting right
-            error = 1;
-        } else if (!leftOnLine && rightOnLine) { // drifting left
-            error = -1;
-        } else if (leftOnLine && rightOnLine) {
-            // terminate
-            Motor.set(Motor.LEFT, 0, Motor.MAX_SPEED * 0.5);
-            Motor.set(Motor.RIGHT, 1, Motor.MAX_SPEED * 0.5);
-            showIcon(IconNames.No, 500);
-            break;
-        }
-
-        const p = Kp * error;
-        sumError += error;
-        const i = Ki * sumError;
-        const d = Kd * (error - lastError);
-
-        const correction = p + i + d;
-
-        Motor.set(Motor.LEFT, 0, Motor.MAX_SPEED - correction);
-        Motor.set(Motor.RIGHT, 1, Motor.MAX_SPEED + correction);
-
-        lastError = error;
-    }
-}
 // 0-255
 const Motor = {
     // 0-255
-    MAX_SPEED: 75,
+    MAX_SPEED: 200,
+    // 0-255
+    BASE_SPEED: 80,
     // [Control Pin, Speed Pin]
     LEFT: [AnalogPin.P13, AnalogPin.P14],
     RIGHT: [AnalogPin.P15, AnalogPin.P16],
@@ -110,6 +30,91 @@ const ForceSensor = {
 
     isPressed: (forceSensor: DigitalPin = null) =>
         pins.digitalReadPin(forceSensor == null ? ForceSensor.MAIN : forceSensor) == 0
+}
+
+function showIcon(icon: IconNames, duration = 0) {
+    basic.showIcon(icon, 0);
+    basic.pause(duration);
+}
+
+function pauseAnimation(duration: number) {
+    const startTime = input.runningTime();
+    led.plotAll();
+
+    let lastProgress = 0;
+
+    while (input.runningTime() < startTime + duration) {
+        if (ForceSensor.isPressed())
+            return 1;
+
+        const elapsed = Math.max(0, input.runningTime() - startTime);
+        const progress = Math.round(elapsed / duration * 25);
+
+        if (progress > lastProgress) {
+            for (let i = lastProgress; i < progress; i++) {
+                const x = i % 5;
+                const y = Math.floor(i / 5);
+                led.unplot(x, y);
+            }
+            lastProgress = progress;
+        }
+    }
+    return 0;
+}
+
+function main() {
+    // go forwards for a duration
+    basic.showArrow(ArrowNames.North);
+    Motor.set(Motor.LEFT, 0, Motor.MAX_SPEED);
+    Motor.set(Motor.RIGHT, 1, Motor.MAX_SPEED);
+    basic.pause(1000);
+
+    // wait for other robots
+    Motor.set(Motor.LEFT, 0, 0);
+    Motor.set(Motor.RIGHT, 1, 0);
+    if (pauseAnimation(23 * 1000) == 1)
+        showIcon(IconNames.Surprised, 500);
+    else
+        showIcon(IconNames.Surprised);
+
+    // const [Kp, Ki, Kd] = [Motor.MAX_SPEED * 0.9, 0.02, 0.05];
+    const Kp = Motor.BASE_SPEED * 1;
+    const Ki = 0;
+    const Kd = 0.5;
+    let [P, I, D, lastError] = [0, 0, 0, 0];
+
+    while (!ForceSensor.isPressed()) {
+        const leftOnLine = Sensor.isOnLine(Sensor.LEFT);
+        const rightOnLine = Sensor.isOnLine(Sensor.RIGHT);
+
+        if (leftOnLine) led.plot(0, 0); else led.unplot(0, 0);
+        if (rightOnLine) led.plot(4, 0); else led.unplot(4, 0);
+
+        /* PID ALGORITHM */
+        let error = 0;
+        if (leftOnLine && !rightOnLine) { // drifting right
+            error = 1;
+        } else if (!leftOnLine && rightOnLine) { // drifting left
+            error = -1;
+        } else if (leftOnLine && rightOnLine) {
+            // terminate
+            Motor.set(Motor.LEFT, 0, 50);
+            Motor.set(Motor.RIGHT, 1, 50);
+            showIcon(IconNames.No, 800);
+            break;
+        }
+
+        P = error;
+        I = I + error;
+        D = error - lastError;
+        lastError = error;
+
+        const correction = (Kp * P) + (Ki * I) + (Kd * D);
+
+        Motor.set(Motor.LEFT, 0, Motor.BASE_SPEED - correction);
+        Motor.set(Motor.RIGHT, 1, Motor.BASE_SPEED + correction);
+
+    }
 }
 
 while (true) {
