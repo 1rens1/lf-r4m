@@ -64,7 +64,7 @@ function pauseAnimation(duration: number) {
 
 function main() {
     // go forwards for a duration
-    basic.showArrow(ArrowNames.North);
+    basic.showArrow(ArrowNames.North, 0);
     Motor.set(Motor.LEFT, 0, Motor.MAX_SPEED);
     Motor.set(Motor.RIGHT, 1, Motor.MAX_SPEED);
     basic.pause(1000);
@@ -72,7 +72,7 @@ function main() {
     // wait for other robots
     Motor.set(Motor.LEFT, 0, 0);
     Motor.set(Motor.RIGHT, 1, 0);
-    if (pauseAnimation(23 * 1000) == 1)
+    if (pauseAnimation(25 * 1000) == 1)
         showIcon(IconNames.Surprised, 500);
     else
         showIcon(IconNames.Surprised);
@@ -80,7 +80,7 @@ function main() {
     // const [Kp, Ki, Kd] = [Motor.MAX_SPEED * 0.9, 0.02, 0.05];
     const Kp = Motor.BASE_SPEED * 1;
     const Ki = 0;
-    const Kd = 0.5;
+    const Kd = 0.75;
     let [P, I, D, lastError] = [0, 0, 0, 0];
 
     while (!ForceSensor.isPressed()) {
@@ -100,7 +100,7 @@ function main() {
             // terminate
             Motor.set(Motor.LEFT, 0, 50);
             Motor.set(Motor.RIGHT, 1, 50);
-            showIcon(IconNames.No, 800);
+            showIcon(IconNames.No, 150);
             break;
         }
 
