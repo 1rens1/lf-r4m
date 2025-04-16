@@ -2,6 +2,14 @@
  * Line follower for R4M National - Indonesia
  * Used PID Algorithm, reference: https://robotresearchlab.com/2019/02/16/pid-line-follower-tuning/
  * by rens
+ * 
+ * Pins:
+ * +-----------------+
+ * | [ ] [ ] [ ] BTN | Button
+ * | [ ] [ ] MTL MTR | Motors
+ * +-----------------+
+ * | . L R . . . . . | Sensors
+ * +-----------------+
  */
 
 // 0-255
